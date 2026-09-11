@@ -1,0 +1,61 @@
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<!--//menu awl// (port dari menu.php)-->
+<div style="background-color:#FFF;padding-top:0px;padding-bottom:0px;width:100%;">
+    <ul style="list-style:none;display:flex;gap:16px;padding:8px 12px;margin:0;align-items:center;">
+
+        <AuthorizeView>
+            <Authorized>
+                @foreach (var item in menuItems)
+                {
+                    <li><NavLink href="@item.Link">@item.Menu</NavLink></li>
+                }
+
+                <li style="margin-left:auto;">
+                    <a href="" @onclick="HandleLogout" @onclick:preventDefault>Logout</a>
+                </li>
+                <li>
+                    <span class="top_linkindex">@context.User.Identity?.Name</span>
+                </li>
+            </Authorized>
+            <NotAuthorized>
+                <li style="margin-left:auto;"><NavLink href="login">Login</NavLink></li>
+            </NotAuthorized>
+        </AuthorizeView>
+
+    </ul>
+</div>
+<!--//menu end//-->
+
+@code {
+    private List<Frontend.Models.MenuItem> menuItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMenuAsync();
+    }
+
+    private async Task LoadMenuAsync()
+    {
+        try
+        {
+            // Setara: SELECT * FROM menu ORDER BY idmenu ASC (+ menu tambahan admin di sisi Backend).
+            var result = await Http.GetFromJsonAsync<List<Frontend.Models.MenuItem>>("api/menu");
+            menuItems = result ?? new();
+        }
+        catch
+        {
+            // Belum login / token kadaluarsa -> menu dinamis tidak ditampilkan.
+            menuItems = new();
+        }
+    }
+
+    private async Task HandleLogout()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+}

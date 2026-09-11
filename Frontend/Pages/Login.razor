@@ -1,0 +1,81 @@
+@page "/login"
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Login - STK Online</PageTitle>
+
+<img src="images/banner.png" alt="banner" />
+
+<div style="max-width:320px;margin:40px auto;background:#875D67;padding:3px;border-radius:4px;">
+    <div style="background:#fff;padding:15px;border-radius:3px;">
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <p style="color:#FF0000;">@errorMessage</p>
+        }
+
+        <EditForm Model="model" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+
+            <div style="margin-bottom:8px;">
+                <label>Username</label><br />
+                <InputText @bind-Value="model.Username" class="textbox" style="height:22px;width:100%;"
+                           title="isikan dengan user email Bapak/Ibu.." autocomplete="off" />
+                <ValidationMessage For="() => model.Username" />
+            </div>
+
+            <div style="margin-bottom:8px;">
+                <label>Password</label><br />
+                <InputText @bind-Value="model.Password" type="password" class="textbox" style="height:22px;width:100%;"
+                           title="isikan dengan password email Bapak/Ibu.." autocomplete="off" />
+                <ValidationMessage For="() => model.Password" />
+            </div>
+
+            <div style="text-align:right;">
+                <button type="submit" disabled="@isLoading">
+                    @(isLoading ? "Memproses..." : "     Login     ")
+                </button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private readonly LoginFormModel model = new();
+    private string? errorMessage;
+    private bool isLoading;
+
+    private async Task HandleLogin()
+    {
+        // Setara validasi JS lama: username & password wajib diisi
+        // (sudah ditangani oleh DataAnnotationsValidator di atas).
+        errorMessage = null;
+        isLoading = true;
+        try
+        {
+            var result = await AuthService.LoginAsync(model.Username, model.Password);
+            if (result.Success)
+            {
+                // Setara: header('location:home.php');
+                Navigation.NavigateTo("/home", forceLoad: false);
+            }
+            else
+            {
+                errorMessage = result.ErrorMessage;
+            }
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    public class LoginFormModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Username harus diisi")]
+        public string Username { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Password harus diisi")]
+        public string Password { get; set; } = string.Empty;
+    }
+}
